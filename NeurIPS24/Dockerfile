@@ -1,16 +1,18 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # To prevent tzdata from prompting current location
 ENV DEBIAN_FRONTEND=noninteractive
 
 
 # The stuff that needs to be there, everywhere
-RUN apt-get update -y && apt-get install -y python3 python3-pip software-properties-common git vim wget
-RUN python3 -m pip install colorama pandas torch torch_optimizer
+RUN apt-get update -y && apt-get install -y python3 python3-pip python3-venv software-properties-common git vim wget
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN /opt/venv/bin/python3 -m pip install colorama pandas torch torch_optimizer
 WORKDIR /root/neuralmc
 
 # Installing verilator. Not done in a seperate stage because it confuses build and run dependencies.
-RUN apt-get update -y && apt-get install -y help2man perl make autoconf g++ flex bison ccache libgoogle-perftools-dev numactl perl-doc libfl2 libfl-dev zlibc zlib1g zlib1g-dev
+RUN apt-get update -y && apt-get install -y help2man perl make autoconf g++ flex bison ccache libgoogle-perftools-dev numactl perl-doc libfl2 libfl-dev zlib1g zlib1g-dev
 
 RUN git clone https://github.com/verilator/verilator
 RUN cd verilator && git checkout v5.022 && autoconf && bash ./configure && make -j `nproc` && make install
@@ -50,8 +52,8 @@ RUN cd mpfr-4.2.1 && ./configure && make && make install
 RUN rm -r ./mpfr-4.2.1
 
 RUN apt-get update -y && apt-get install -y build-essential pkg-config ninja-build libgtest-dev
-RUN python3 -m pip install cmake meson ninja cython
-RUN git clone https://github.com/bitwuzla/bitwuzla && cd bitwuzla && ./configure.py debug && cd build && meson test
-RUN python3 -m pip install ./bitwuzla
+RUN /opt/venv/bin/python3 -m pip install cmake meson ninja cython
+RUN git clone https://github.com/bitwuzla/bitwuzla && cd bitwuzla && /opt/venv/bin/python3 ./configure.py debug && cd build && /opt/venv/bin/meson test
+RUN /opt/venv/bin/python3 -m pip install ./bitwuzla
 
 COPY ./ ./
